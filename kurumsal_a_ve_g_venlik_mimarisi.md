@@ -1,7 +1,6 @@
 # 🌐 Kurumsal Ağ Topolojisi ve Güvenlik Mimarisi Dokümantasyonu
 
-Bu depo (repository), çok şubeli kurumsal bir yapının IP alt ağ (subnet) planlamasını, VLAN segmentasyonunu, bant genişliği kapasite planlamasını ve merkezi güvenlik (Firewall & SOC) mimarisini içermektedir.
-
+Küresel ölçekte siber güvenlik çözümleri sunan şirketimiz; İstanbul merkezli genel müdürlük yapısı, Sivas'taki 7/24 Güvenlik Operasyon Merkezi (SOC) ve Ar-Ge üssü, Ankara'daki Siber Güvenlik Eğitim Akademisi ve Dubai'deki uluslararası ticaret ofisi olmak üzere dört ana lokasyonda faaliyet göstermektedir. Kurumlara yönelik uçtan uca, hem ofansif hem de defansif güvenlik hizmetleri sağlayan firmamızın temel faaliyet alanları arasında; Avrupa ve Orta Doğu (MEA) bölgelerine özel operasyonlar yürüten Fiziksel Sızma Testi (Red Team) faaliyetleri, sürekli ağ izleme ve tehdit analizi, siber güvenlik yazılımları geliştirme süreçleri ve stajyer programlarıyla sektöre yeni uzmanlar kazandıran akademik eğitim hizmetleri yer almaktadır.
 ---
 
 ## 🏢 1. Şube Ağ ve Kapasite Planlamaları
@@ -66,8 +65,59 @@ Bu depo (repository), çok şubeli kurumsal bir yapının IP alt ağ (subnet) pl
 | **Dubai (Saha)** | **FortiGate 60F** | 35 kullanıcı ve 200 Mbps hat için idealdir. Sivas merkez ile sürekli stabil bir SD-WAN/VPN tüneli kuracak şekilde yapılandırılmıştır. |
 
 ---
+##  ⚙️ 3. Güvenlik Duvarı (Firewall) Tercih Sebepleri ve Kapasite Planlaması
 
-## 👁️ 3. Merkezi İzleme (Monitoring) ve SOC Mimarisi
+### 1. İstanbul (HQ ve Red Team)
+**Seçilen Model: FortiGate 80F**
+
+Red Team (Fiziksel Sızma Testi) ekipleri Nmap, Masscan, Burp Suite gibi araçlarla tarama yaparken saniyede binlerce "Concurrent Session" (Eşzamanlı Oturum) açar. Bu durum standart güvenlik duvarlarının RAM'ini anında doldurur.
+
+| Karşılaştırılan Model | Neden Tercih Edilmedi? / Farkı Nedir? |
+| :--- | :--- |
+| **Alt Model: FG-60F** | Bellek (RAM) kapasitesi daha düşüktür. 60 kullanıcının normal trafiği üzerine 20 kişilik Red Team'in ofansif ağ taramaları eklendiğinde cihaz "Session Drop" (oturum düşürme) yaşatabilirdi. |
+| **Seçilen: FG-80F** | **1.5 Milyon Eşzamanlı Oturum** kapasitesi ile Red Team'in agresif ağ taramalarını sorunsuz tolere eder. 250 Mbps fiber hattı 715 Mbps Threat Protection kapasitesiyle rahatlıkla filtreler. |
+
+---
+
+### 2. Sivas (SOC ve Ar-Ge) - Merkez Hub
+**Seçilen Model: FortiGate 200F**
+
+SOC ekibinin analiz yapabilmesi için tüm trafiğin (SSL şifreli trafik dahil) açılarak incelenmesi (Deep Packet Inspection) gerekir. Sivas, diğer 3 şubenin VPN tünellerinin sonlandığı merkez noktadır.
+
+| Karşılaştırılan Model | Neden Tercih Edilmedi? / Farkı Nedir? |
+| :--- | :--- |
+| **Alt Model: FG-100F** | Threat Protection (IPS+AV+Web) kapasitesi ~1 Gbps'dir. 500 Mbps simetrik hat, 105 kullanıcı ve tüm şubelerden gelen yoğun VPN logları birleştiğinde cihaz %80 CPU kullanımlarına ulaşıp darboğaz yaratabilirdi. |
+| **Seçilen: FG-200F** | **Threat Protection: 3 Gbps, IPSec VPN: 13 Gbps.** 500 Mbps hattı hiçbir gecikme yaşatmadan denetler. SOC için gereken SSL Decryption yükünü donanımsal olarak rahatça kaldırır. |
+| **Üst Model: FG-400F** | 105 kullanıcı ve 500 Mbps hat için bütçe israfı olurdu. FG-400F daha çok 500+ kullanıcılı Veri Merkezleri içindir. |
+
+---
+
+### 3. Ankara (Eğitim ve Akademi)
+**Seçilen Model: FortiGate 100F (veya 80F)**
+
+100'den fazla stajyerin aynı anda video izlemesi, sanal makine (ISO) indirmesi ve laboratuvar ortamlarına bağlanması, hattın hızla tıkanmasına yol açar. Burada en önemli faktör Application Control (Uygulama Kontrolü) ve Traffic Shaping (Trafik Şekillendirme/QoS) gücüdür.
+
+| Karşılaştırılan Model | Neden Tercih Edilmedi? / Farkı Nedir? |
+| :--- | :--- |
+| **Alt Model: FG-60F** | 110 kullanıcı cihazın önerilen limitlerinin (genelde maks 50-60 kişi) çok üzerindedir. Stajyerlerin P2P/Torrent engellemeleri ve hız limitleri eklendiğinde CPU yetersiz kalır. |
+| **Seçilen: FG-100F** | Cihaz üzerindeki fiziksel port sayısı fazladır. Eğitim salonları, stajyer Wi-Fi ağları ve eğitmen ağları fiziksel olarak ayrı arayüzlere bağlanıp tam izolasyon sağlanabilir. |
+
+---
+
+### 4. Dubai (Uluslararası Saha)
+**Seçilen Model: FortiGate 60F**
+
+Şirketin en küçük ama uluslararası verisinin aktığı noktadır. Temel gereksinim, Sivas merkeze kesintisiz, stabil ve şifreli bir SD-WAN/VPN tüneli kurmaktır.
+
+| Karşılaştırılan Model | Neden Tercih Edilmedi? / Farkı Nedir? |
+| :--- | :--- |
+| **Alt Model: FG-40F** | 10-15 kişilik küçük ofisler (SOHO) içindir. Dubai'deki 35 personel ve özellikle 200 Mbps hattan Sivas'a sürekli video konferans/operasyonel veri aktaran Red Team için VPN throughput performansı sınırda kalır. |
+| **Seçilen: FG-60F** | **IPSec VPN kapasitesi 6.5 Gbps'dir.** Şube donanımı olmasına rağmen, içindeki SOC4 çipi sayesinde Dubai'den Sivas'a (merkeze) aktarılan sızma testi verilerini sıfır gecikme ile şifreler. 35 kullanıcı için fiyat/performans olarak en ideal cihazdır. |
+
+---
+
+
+## 👁️ 4. Merkezi İzleme (Monitoring) ve SOC Mimarisi
 
 İzleme mimarisinin operasyonel merkezi **Sivas (SOC)** şubesidir. Ağ izleme ve güvenlik operasyonları 3 temel katmanda kurgulanmıştır:
 
@@ -83,3 +133,5 @@ Bu depo (repository), çok şubeli kurumsal bir yapının IP alt ağ (subnet) pl
 ### Katman 3: Uç Nokta İzleme (EDR/XDR) ve Zero Trust
 * **Agent Tabanlı İzleme:** Ağ tarafındaki izolasyon (VLAN segmentasyonu) sağlandıktan sonra, Muhasebe, Ar-Ge ve Yönetim cihazlarına **Sysmon ve Wazuh Agent** kurularak loglar SOC'a yönlendirilir.
 * **Zero Trust Segmentasyonu:** Özellikle Ankara şubesindeki Stajyer VLAN'inin (VLAN 20), şirket iç ağındaki (10.x.x.x) diğer hiçbir VLAN'e erişemeyeceği garanti altına alınmıştır. Bu ağa sadece internet çıkış izni verilmiştir.
+
+  
